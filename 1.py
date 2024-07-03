@@ -9,6 +9,7 @@
 from time import sleep
 import pandas  as pd
 import requests
+from lxml import html
 
 
 def Send_Revision_History(asn):
@@ -140,7 +141,6 @@ def Send_Isolation_Country(asn):
         pass
     return geo_loc_name
 
-
 def Send_Article(asn):
     header = {'Host': 'www.ncbi.nlm.nih.gov',
               'Cookie': 'gdh-data-hub-csrftoken=VjdMkSGOTEeaxkdGd21QXojsIW27cBxI; ncbi_sid=E470006867D6E143_20133SID; _gid=GA1.2.707638761.1719818457; WebEnv=1ZMmxp9c3Uo1uddJeAWr-ZNk9DlczhFo886O1t2XEPYkW%40E470006867D6E143_20133SID; _ga_DP2X732JSX=GS1.1.1719832778.3.1.1719836020.0.0.0; _ga=GA1.1.1597956621.1719818457; _ga_CSLL4ZEK4L=GS1.1.1719832778.3.1.1719836020.0.0.0; ncbi_pinger=N4IgDgTgpgbg+mAFgSwCYgFwgMIFEAc+AIgIwCsAYgGz4BMA7NSSQAxvvsAstRLAzAE4yAOgC2cWpxAAaEAFcAdgBsA9gENUCqAA8ALplC1MIKAt3QAXjJB9jCuQGMHK6NalYA5qYBGahQGtrMmNrKmMvBV8A63pjRF1RJWt8Y1oWawFjVCgAMzU5JX1ZZmMSaxJbLDLi9xBoc2RYKHLgqpJOPnoWegEhcrCsNSUk4tisPKUAZ2bilPGh6es04zxCUkoaBiZWDg5uXkERcUklsqxTcygLDHsnFygMCKj/DAA5AHlX3CWjLAB3AHCBQObzIIFKURA5CIYQeFQwJaZKpkPhhWR8dJYfBUKTos4gcio6x8X4gfAkNE2SogCaLdG1cxyGY2OYgYlIkA9ElGWScTEEkgCKhsNzUljCPnCdK82qKVQaLR6NytEDSkAo0ooylkWr0DFBAaqoJjI2yKj4vkkfBSAC+NqAA==',
@@ -158,26 +158,26 @@ def Send_Article(asn):
               'Sec-Fetch-Dest': 'document',
               'Accept-Encoding': 'gzip, deflate, br',
               'Priority': 'u=0, i'}
-    url='https://www.ncbi.nlm.nih.gov/nuccore/{}/'.format(asn)
+    title=""
+    url = 'https://www.ncbi.nlm.nih.gov/nuccore/{}/'.format(asn)
     print(url)
-    response = requests.get(url, headers=header,proxies={"http": None, "https": None})
-    from lxml import html
-    tree = html.fromstring(response.content)
-    content_value = tree.xpath("//meta[@name='ncbi_uidlist']/@content")[0]
-    value = tree.xpath(
-        "//input[@name='EntrezSystem2.PEntrez.Nuccore.Sequence_ResultsPanel.Sequence_DisplayBar.ncbi_phid']/@value")[0]
-
-    url = 'https://www.ncbi.nlm.nih.gov/portal/loader/pload.cgi?curl=http%3A%2F%2Fwww.ncbi.nlm.nih.gov%2Fsviewer%2Fviewer.cgi%3Fid%3D{}%26db%3Dnuccore%26report%3Dgenbank%26conwithfeat%3Don%26hide-sequence%3Don%26hide-cdd%3Don%26retmode%3Dhtml%26ncbi_phid%3D{}%26withmarkup%3Don%26tool%3Dportal%26log%24%3Dseqview'.format(
-        content_value, value)
-    print(url)
-    print()
-    sleep(0.3)
     response = requests.get(url, headers=header, proxies={"http": None, "https": None})
-    import re
-    html_content = response.text
-    pattern = re.compile(r'TITLE\s+(.*?)\s+JOURNAL', re.DOTALL)
-    matches = pattern.findall(html_content)
-    title = re.sub(r'\s+', ' ', matches[0]).strip()
+    try:
+        tree = html.fromstring(response.content)
+        content_value = tree.xpath("//meta[@name='ncbi_uidlist']/@content")[0]
+        value = tree.xpath( "//input[@name='EntrezSystem2.PEntrez.Nuccore.Sequence_ResultsPanel.Sequence_DisplayBar.ncbi_phid']/@value")[0]
+        url = 'https://www.ncbi.nlm.nih.gov/portal/loader/pload.cgi?curl=http%3A%2F%2Fwww.ncbi.nlm.nih.gov%2Fsviewer%2Fviewer.cgi%3Fid%3D{}%26db%3Dnuccore%26report%3Dgenbank%26conwithfeat%3Don%26hide-sequence%3Don%26hide-cdd%3Don%26retmode%3Dhtml%26ncbi_phid%3D{}%26withmarkup%3Don%26tool%3Dportal%26log%24%3Dseqview'.format(content_value, value)
+        print(url)
+        sleep(0.3)
+        response = requests.get(url, headers=header, proxies={"http": None, "https": None})
+        import re
+        html_content = response.text
+        pattern = re.compile(r'TITLE\s+(.*?)\s+JOURNAL', re.DOTALL)
+        matches = pattern.findall(html_content)
+        title = re.sub(r'\s+', ' ', matches[0]).strip()
+    except:
+        pass
+
     return title
 
 
